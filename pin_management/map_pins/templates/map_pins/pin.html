@@ -1,0 +1,550 @@
+{% extends 'map_pins/base.html' %}
+{% load static %}
+
+{% block title %}Map Pins{% endblock %}
+
+
+{% block content %}
+<div class="container-fluid">
+    <div id="navbar" class="navbar">
+        <ul class="nav navbar-nav navbar-right">
+            <li><a href="{% url 'logout' %}" class="btn btn-link">Logout</a></li>
+        </ul>
+    </div>
+    <h1>Map Pins</h1>
+    <div class="row">
+      <!-- Table -->
+      <div class="col-md-4">
+        <table id="pinTable" class="table table-striped">
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Address</th>
+            <th>Progress</th>
+            <th colspan="2">Actions</th>
+          </tr>
+          {% if pins %}
+          {% for pin in pins %}
+          <tr id="pin-{{pin.id}}">
+              <!-- Visible data -->
+              <td class="pinId pinData" name="id">{{pin.id}}</td>
+              <td class="pinName pinData" name="name">{{pin.name}}</td>
+              <td class="pinAddress pinData" name="address">{{pin.address}}</td>
+              <td class="pinProgress pinData" name="progress">{{pin.progress}}%</td>
+
+              <!-- Hidden data -->
+              <td class="pinDescription pinData" name="description" style="display:none;">{{pin.description}}</td>
+              <td class="pinLongitude pinData" name="longitude" style="display:none;">{{pin.longitude}}</td>
+              <td class="pinLatitude pinData" name="latitude" style="display:none;">{{pin.latitude}}</td>
+              <td class="pinCategory pinData" name="category" style="display:none;">{{pin.category}}</td>
+              <td class="pinContactPerson pinData" name="contact_person" style="display:none;">{{pin.contact_person}}</td>
+              <td class="pinAssignedUser pinData" name="assigned_user" style="display:none;">{{pin.assigned_user.id}}</td>
+              <td class="pinValue pinData" name="value" style="display:none;">{{pin.value}}</td>
+
+              <!-- Buttons -->
+              <td align="center">
+                  <button class="btn btn-link form-control" onClick="editPin({{pin.id}})" data-toggle="modal" data-target="#pinUpdateModal">Edit</button>
+              </td>
+              <td align="center">
+                <button class="btn btn-link form-control" onClick="showPin({{pin.id}})" data-toggle="modal" data-target="#pinShowModal">Details</button>
+              </td>
+          </tr>
+          {% endfor %}
+          {% else %}
+            No Pins
+          {% endif %}
+        </table>
+      </div>
+      <!-- Map -->
+      <div class="col-md-8">
+        <div class="pageholder">
+            <div class="linkholder">
+                <div class="mapholder">
+                    <div id="map"></div>
+                    <script src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_API_KEY}}&callback=initMap&v=weekly" defer></script>
+                </div>
+            </div>
+            <div class="titleholder">
+                <div class="title"><i class="fas fa-compass mr-2"></i> Pins on the map </div>
+                <div class="col-md-2">
+                    <button class="btn btn-danger form-control" data-toggle="modal" data-target="#pinCreateModal">Add Pin</button>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+   <!-- Pin Show Modal -->
+   <div class="modal fade" id="pinShowModal" tabindex="-1" role="dialog" aria-labelledby="pinShowModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+          <h4 class="modal-title" id="pinShowModalLabel">Details</h4>
+        </div>
+        <div class="modal-body" id="pinShowModalBody">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input class="form-control" type="text" id="name" name="name" placeholder="Name" maxlength="100" disabled>
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="4" cols="50" placeholder="Description" disabled></textarea>
+            </div>
+            <div class="form-group">
+                <label for="address">Address</label>
+                <input class="form-control" type="text" id="address" name="address" placeholder="Address" maxlength="200" disabled>
+            </div>
+            <div class="form-group">
+                <label for="contact_person">Contact person</label>
+                <input class="form-control" type="text" id="contact_person" name="contact_person" placeholder="Contact person" maxlength="50" disabled>
+            </div>
+            <div class="form-group">
+                <label for="value">Value</label>
+                <input class="form-control" type="number" id="value" name="value" min="0" max="99999999.99" step="0.01" placeholder="Value" disabled>
+            </div>
+            <div class="form-group">
+                <label for="progress">Progress</label>
+                <input class="form-control" type="number" id="progress" name="progress" min="0" max="100" step="1" placeholder="Progress" disabled>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pin Create Modal -->
+  <div class="modal fade" id="pinCreateModal" tabindex="-1" role="dialog" aria-labelledby="pinCreateModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+          <h4 class="modal-title" id="pinCreateModalLabel">Create</h4>
+        </div>
+        <!-- Create Form -->
+        <form id="createPinForm" action="">
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input class="form-control" type="text" id="name" name="name" placeholder="Name" maxlength="100" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="4" cols="50" placeholder="Description" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="address">Address</label>
+                <input class="form-control" type="text" id="address" name="address" placeholder="Address" maxlength="200" required>
+            </div>
+            <div class="form-group">
+                <label for="latitude">Latitude</label>
+                <input class="form-control" type="number" id="latitude" name="latitude" step="any" placeholder="Latitude" required>
+            </div>
+            <div class="form-group">
+                <label for="longitude">Longitude</label>
+                <input class="form-control" type="number" id="longitude" name="longitude" step="any" placeholder="Longitude" required>
+            </div>
+            <div class="form-group">
+                <label for="category">Category</label>
+                <select id="category" class="form-control" name="category">
+                    {% for value, label in category_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="contact_person">Contact person</label>
+                <input class="form-control" type="text" id="contact_person" name="contact_person" placeholder="Contact person" maxlength="50" required>
+            </div>
+            <div class="form-group">
+                <label for="assigned_user">Assigned User</label>
+                <select id="assigned_user" class="form-control" name="assigned_user">
+                    {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }} ({{user.id}})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="value">Value</label>
+                <input class="form-control" type="number" id="value" name="value" min="0" max="99999999.99" step="0.01" placeholder="Value" required>
+            </div>
+            <div class="form-group">
+                <label for="progress">Progress</label>
+                <input class="form-control" type="number" id="progress" name="progress" min="0" max="100" step="1" placeholder="Progress" required>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Create</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pin Update Modal -->
+  <div class="modal fade" id="pinUpdateModal" tabindex="-1" role="dialog" aria-labelledby="pinUpdateModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+          <h4 class="modal-title" id="pinUpdateModalLabel">Edit</h4>
+        </div>
+        <!-- Update Form -->
+        <form id="updatePinForm" action="">
+        <div class="modal-body">
+            <input class="form-control" type="hidden" name="pin_id" id="form-pin-id"/>
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input class="form-control" type="text" name="name" id="form-name" placeholder="Name" maxlength="100" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea class="form-control" name="description" id="form-description" rows="4" cols="50" placeholder="Description" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="address">Address</label>
+                <input class="form-control" type="text" name="address" id="form-address" placeholder="Address" maxlength="200" required>
+            </div>
+            <div class="form-group">
+                <label for="latitude">Latitude</label>
+                <input class="form-control" type="number" name="latitude" id="form-latitude" step="any" placeholder="Latitude" required>
+            </div>
+            <div class="form-group">
+                <label for="longitude">Longitude</label>
+                <input class="form-control" type="number" name="longitude" id="form-longitude" step="any" placeholder="Longitude" required>
+            </div>
+            <div class="form-group">
+                <label for="category">Category</label>
+                <select name="category" class="form-control" id="form-category">
+                    {% for value, label in category_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="contact_person">Contact person</label>
+                <input class="form-control" type="text" name="contact_person" id="form-contact-person" placeholder="Contact person" maxlength="50" required>
+            </div>
+            <div class="form-group">
+                <label for="assigned_user">Assigned User</label>
+                <select name="assigned_user" class="form-control" id="form-assigned-user">
+                    {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }} ({{user.id}})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="value">Value</label>
+                <input class="form-control" type="number" name="value" id="form-value" min="0" max="99999999.99" step="0.01" placeholder="Value" required>
+            </div>
+            <div class="form-group">
+                <label for="progress">Progress</label>
+                <input class="form-control" type="number" name="progress" id="form-progress" min="0" max="100" step="1" placeholder="Progress" required>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Update</button>
+            <button type="button" class="btn btn-danger" onClick="deletePin()" data-dismiss="modal">Delete</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+        </form>
+      </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block javascript %}
+<script>
+    var googleMapRef = null;
+    var googleMapMarkers = {};
+    var infoWindow = null;
+</script>
+
+{% comment %} Show Pin {% endcomment %}
+<script>
+    function showPin(id) {
+        var tr_id = "#pin-" + id;
+        var name = $(tr_id).find(".pinName").text();
+        var description = $(tr_id).find(".pinDescription").text();
+        var address = $(tr_id).find(".pinAddress").text();
+        var contactPerson = $(tr_id).find(".pinContactPerson").text();
+        var value = $(tr_id).find(".pinValue").text();
+        var progress = $(tr_id).find(".pinProgress").text().slice(0, -1); // Remove the % sign.
+
+        $('#pinShowModalBody #name').val(name);
+        $('#pinShowModalBody #description').val(description);
+        $('#pinShowModalBody #address').val(address);
+        $('#pinShowModalBody #contact_person').val(contactPerson);
+        $('#pinShowModalBody #value').val(value);
+        $('#pinShowModalBody #progress').val(progress);
+    }
+</script>
+
+{% comment %} Create Pin {% endcomment %}
+<script>
+    $("form#createPinForm").submit(function(e) {
+        e.preventDefault();
+        var nameInput = $('#createPinForm input[name="name"]').val().trim();
+        var descriptionInput = $('#createPinForm textarea[name="description"]').val().trim();
+        var addressInput = $('#createPinForm input[name="address"]').val().trim();
+        var longitudeInput = $('#createPinForm input[name="longitude"]').val();
+        var latitudeInput = $('#createPinForm input[name="latitude"]').val();
+        var categoryInput = $('#createPinForm select[name="category"]').val();
+        var contactPersonInput = $('#createPinForm input[name="contact_person"]').val().trim();
+        var assignedUserInput = $('#createPinForm select[name="assigned_user"]').val();
+        var valueInput = $('#createPinForm input[name="value"]').val();
+        var progressInput = $('#createPinForm input[name="progress"]').val();
+        if (nameInput && descriptionInput && addressInput && longitudeInput && latitudeInput && categoryInput && contactPersonInput && assignedUserInput && valueInput && progressInput) {
+            // Create Ajax Call
+            $.ajax({
+                url: '{% url "pin_ajax_create" %}',
+                data: {
+                    'name': nameInput,
+                    'description': descriptionInput,
+                    'address': addressInput,
+                    'longitude': longitudeInput,
+                    'latitude': latitudeInput,
+                    'category': categoryInput,
+                    'contact_person': contactPersonInput,
+                    'assigned_user': assignedUserInput,
+                    'value': valueInput,
+                    'progress': progressInput,
+                },
+                dataType: 'json',
+                success: function (data) {
+                    if (data.pin) {
+                      appendToPinTable(data.pin);
+                      addPinOnMap(data.pin)
+                    }
+                    $('form#createPinForm').trigger("reset");
+                    $('#pinCreateModal').modal('hide');
+                },
+                error: function (data) {
+                    alert("Something went wrong.");
+                }
+            });
+          } else {
+            alert("All fields must have a valid value.");
+        }
+        return false;
+    });
+    function appendToPinTable(pin) {
+      $("#pinTable > tbody:last-child").append(`
+            <tr id="pin-${pin.id}">
+                <td class="pinId pinData" name="id">${pin.id}</td>
+                <td class="pinName pinData" name="name">${pin.name}</td>
+                <td class="pinAddress pinData" name="address">${pin.address}</td>
+                <td class="pinProgress pinData" name="progress">${pin.progress}%</td>
+
+                <td class="pinDescription pinData" name="description" style="display:none;">${pin.description}</td>
+                <td class="pinLongitude pinData" name="longitude" style="display:none;">${pin.longitude}</td>
+                <td class="pinLatitude pinData" name="latitude" style="display:none;">${pin.latitude}</td>
+                <td class="pinCategory pinData" name="category" style="display:none;">${pin.category}</td>
+                <td class="pinContactPerson pinData" name="contact_person" style="display:none;">${pin.contact_person}</td>
+                <td class="pinAssignedUser pinData" name="assigned_user" style="display:none;">${pin.assigned_user.id}</td>
+                <td class="pinValue pinData" name="value" style="display:none;">${pin.value}</td>
+
+                <td align="center">
+                    <button class="btn btn-link form-control" onClick="editPin(${pin.id})" data-toggle="modal" data-target="#pinUpdateModal">Edit</button>
+                </td>
+                <td align="center">
+                  <button class="btn btn-link form-control" onClick="showPin(${pin.id})" data-toggle="modal" data-target="#pinShowModal">Details</button>
+                </td>
+            </tr>
+        `);
+    }
+</script>
+
+{% comment %} Update Pin {% endcomment %}
+<script>
+    $("form#updatePinForm").submit(function(e) {
+        e.preventDefault();
+        var idInput = $('#updatePinForm input[name="pin_id"]').val();
+        var nameInput = $('#updatePinForm input[name="name"]').val().trim();
+        var descriptionInput = $('#updatePinForm textarea[name="description"]').val().trim();
+        var addressInput = $('#updatePinForm input[name="address"]').val().trim();
+        var longitudeInput = $('#updatePinForm input[name="longitude"]').val();
+        var latitudeInput = $('#updatePinForm input[name="latitude"]').val();
+        var categoryInput = $('#updatePinForm select[name="category"]').val();
+        var contactPersonInput = $('#updatePinForm input[name="contact_person"]').val().trim();
+        var assignedUserInput = $('#updatePinForm select[name="assigned_user"]').val();
+        var valueInput = $('#updatePinForm input[name="value"]').val();
+        var progressInput = $('#updatePinForm input[name="progress"]').val();
+        if (idInput && nameInput && descriptionInput && addressInput && longitudeInput && latitudeInput && categoryInput && contactPersonInput && assignedUserInput && valueInput && progressInput) {
+            // Update Ajax Call
+            $.ajax({
+                url: '{% url "pin_ajax_update" %}',
+                data: {
+                    'id': idInput,
+                    'name': nameInput,
+                    'description': descriptionInput,
+                    'address': addressInput,
+                    'longitude': longitudeInput,
+                    'latitude': latitudeInput,
+                    'category': categoryInput,
+                    'contact_person': contactPersonInput,
+                    'assigned_user': assignedUserInput,
+                    'value': valueInput,
+                    'progress': progressInput,
+                },
+                dataType: 'json',
+                success: function (data) {
+                    if (data.pin) {
+                        updateToPinTabel(data.pin);
+                        updatePinPositionOnMap(data.pin.id, data.pin.latitude, data.pin.longitude);
+                    }
+                    $('#pinUpdateModal').modal('hide');
+                    $('form#updatePinForm').trigger("reset");
+                },
+                error: function (data) {
+                    alert("Something went wrong.");
+                }
+            });
+        } else {
+            alert("All fields must have a valid value.");
+        }
+        return false;
+    });
+
+    // Update Django Ajax Call
+    function editPin(id) {
+        if (id) {
+            var tr_id = "#pin-" + id;
+            var name = $(tr_id).find(".pinName").text();
+            var address = $(tr_id).find(".pinAddress").text();
+            var progress = $(tr_id).find(".pinProgress").text().slice(0, -1); // Remove the % sign.
+
+            var description = $(tr_id).find(".pinDescription").text();
+            var longitude = $(tr_id).find(".pinLongitude").text();
+            var latitude = $(tr_id).find(".pinLatitude").text();
+            var category = $(tr_id).find(".pinCategory").text();
+            var contactPerson = $(tr_id).find(".pinContactPerson").text();
+            var assignedUser = $(tr_id).find(".pinAssignedUser").text();
+            var value = $(tr_id).find(".pinValue").text();
+
+            $('#form-pin-id').val(id);
+            $('#form-name').val(name);
+            $('#form-address').val(address);
+            $('#form-progress').val(progress);
+
+            $('#form-description').val(description);
+            $('#form-longitude').val(longitude);
+            $('#form-latitude').val(latitude);
+            $('#form-category').val(category);
+            $('#form-contact-person').val(contactPerson);
+            $('#form-assigned-user').val(assignedUser);
+            $('#form-value').val(value);
+        }
+    }
+    function updateToPinTabel(pin){
+        $("#pinTable #pin-" + pin.id).children(".pinData").each(function() {
+            var attr = $(this).attr("name");
+            if (attr == "name") {
+                $(this).text(pin.name);
+            } else if (attr == "address") {
+                $(this).text(pin.address);
+            } else if (attr == "progress") {
+                $(this).text(pin.progress + '%'); // Add the % sign.
+            } else if (attr == "description") {
+                $(this).text(pin.description);
+            } else if (attr == "longitude") {
+                $(this).text(pin.longitude);
+            } else if (attr == "latitude") {
+                $(this).text(pin.latitude);
+            } else if (attr == "category") {
+                $(this).text(pin.category);
+            } else if (attr == "contact_person") {
+                $(this).text(pin.contact_person);
+            } else if (attr == "assigned_user") {
+                $(this).text(pin.assigned_user.id);
+            } else if (attr == "value") {
+                $(this).text(pin.value);
+            }
+        });
+    }
+</script>
+
+{% comment %} Delete Pin {% endcomment %}
+<script>
+    function deletePin() {
+        var pinId = $('#updatePinForm input[name="pin_id"]').val();
+        var action = confirm("Are you sure you want to delete this pin?");
+        if (action != false) {
+        $.ajax({
+            url: '{% url "pin_ajax_delete" %}',
+            data: {
+                'id': pinId,
+            },
+            dataType: 'json',
+            success: function (data) {
+                if (data.deleted) {
+                    $("#pinTable #pin-" + pinId).remove();
+                    removePinFromMap(data.id)
+                }
+            },
+            error: function (data) {
+                alert("Something went wrong.");
+            }
+        });
+        }
+    }
+</script>
+
+<script>
+    $(document).ready(function(){
+        $.ajax({
+            url: "{% url 'pins' %}",
+            method: 'GET',
+            success: function (data) {
+                initMap(data);
+            }
+      });
+    });
+
+    function initMap(pins) {
+        googleMapRef = new google.maps.Map(document.getElementById('map'), {
+          zoom: 2,
+          center: {lat: 31.582045, lng: 74.329376},
+          mapTypeId: 'hybrid'
+       });
+       infoWindow = new google.maps.InfoWindow();
+       const markers = pins?.map((pin) => {
+            addPinOnMap(pin)
+        });
+    }
+    function addPinOnMap(pin) {
+        const marker = new google.maps.Marker({
+            position: { lat: parseFloat(pin.latitude), lng: parseFloat(pin.longitude)},
+            map: googleMapRef,
+            title: pin.name,
+            label: pin.id.toString(),
+            optimized: false,
+        });
+
+        // Add a click listener for each marker, and set up the info window.
+        marker.addListener("click", () => {
+            for (const [key, value] of Object.entries(googleMapMarkers)) {
+                if (value == marker) {
+                    showPin(key);
+                    $('#pinShowModal').modal('show');
+                }
+            }
+        });
+
+        googleMapMarkers[pin.id] = marker;
+    }
+    function removePinFromMap(pin_id) {
+        const marker = googleMapMarkers[pin_id];
+        marker.setMap(null);
+        delete googleMapMarkers[pin_id];
+    }
+    function updatePinPositionOnMap(pin_id, latitude, longitude) {
+        const marker = googleMapMarkers[pin_id];
+        var latlng = new google.maps.LatLng(parseFloat(latitude), parseFloat(longitude));
+        marker.setPosition(latlng);
+    }
+</script>
+{% endblock javascript %}
